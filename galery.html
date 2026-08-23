@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABÊ Games — Galeria Overlay</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: transparent !important;
+        font-family: 'Press Start 2P', cursive, monospace;
+    }
+
+    /* CARROSSEL NO RODAPÉ */
+    #gallery-carousel-container {
+        position: absolute;
+        top: 1330px;
+        left: 350px;
+        width: 710px;
+        height: 165px;
+        background: rgba(15, 12, 30, 0.92);
+        border: 2px solid #5d3ebd;
+        border-radius: 12px;
+        padding: 10px 12px;
+        box-shadow: 0 0 15px rgba(123, 44, 191, 0.6);
+        color: #fff;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .title-gallery {
+        text-align: center;
+        font-size: 13px;
+        color: #fca311;
+        text-shadow: 2px 2px #000;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .carousel-wrapper {
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .carousel-track {
+        display: flex;
+        gap: 12px;
+        width: max-content;
+        animation: scroll 22s linear infinite;
+    }
+
+    @keyframes scroll {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+
+    .gallery-card {
+        background: rgba(20, 15, 40, 0.85);
+        border: 2px solid #3d2b7d;
+        border-radius: 8px;
+        padding: 6px 4px;
+        width: 115px;
+        height: 115px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        filter: grayscale(90%) opacity(0.4);
+        transition: all 0.4s ease;
+    }
+
+    .gallery-card.unlocked {
+        filter: grayscale(0%) opacity(1);
+        border-color: #00f5d4;
+        box-shadow: 0 0 12px #00f5d4, inset 0 0 8px rgba(0, 245, 212, 0.3);
+        background: rgba(0, 245, 212, 0.15);
+    }
+
+    .gallery-img {
+        width: 46px;
+        height: 46px;
+        object-fit: contain;
+    }
+
+    .gallery-count {
+        font-size: 11px;
+        color: #ff0055;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px #000;
+    }
+
+    .gallery-card.unlocked .gallery-count {
+        color: #00f5d4;
+    }
+
+    .gallery-name {
+        font-size: 8px;
+        color: #fff;
+        text-align: center;
+        line-height: 1.2;
+        text-transform: uppercase;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 105px;
+    }
+
+    /* ALERTA CENTRAL DO JOGO */
+    #overlay {
+        position: absolute;
+        top: 838px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 900px;
+        height: 600px;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+    }
+
+    #alert-pop {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        animation: popIn 0.5s ease-out;
+    }
+
+    #alert-pop img {
+        width: 220px;
+        height: 220px;
+        object-fit: contain;
+        filter: drop-shadow(0 0 35px #00f5d4);
+    }
+
+    #alert-pop .alert-text {
+        margin-top: 15px;
+        font-size: 18px;
+        color: #00f5d4;
+        text-shadow: 3px 3px 6px #000;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    @keyframes popIn {
+        0% { transform: scale(0.1); opacity: 0; }
+        70% { transform: scale(1.15); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    #status {
+        position: fixed;
+        bottom: 8px;
+        left: 8px;
+        z-index: 9999;
+        padding: 4px 7px;
+        border-radius: 4px;
+        background: rgba(0,0,0,.7);
+        color: white;
+        font: 10px Arial, sans-serif;
+        pointer-events: none;
+    }
+</style>
+</head>
+
+<body>
+
+<div id="gallery-carousel-container">
+    <div class="title-gallery">✨ LIGHT UP MY GALLERY ✨</div>
+    <div class="carousel-wrapper">
+        <div class="carousel-track" id="gallery-track"></div>
+    </div>
+</div>
+
+<div id="overlay">
+    <div id="alert-pop">
+        <img id="alert-img" src="" alt="Alerta">
+        <div class="alert-text" id="alert-title">ITEM ILUMINADO!</div>
+    </div>
+</div>
+
+<audio id="audio-alert" src="alert.mp3" preload="auto"></audio>
+
+<div id="status">🔄 Conectando ao Streamer.bot...</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@streamerbot/client/dist/streamerbot-client.js"></script>
+
+<script>
+const CONFIG = {
+    actionName: "PRESENTES",
+    galleryVersion: "v10_reset_pos_testes",
+
+    galleryGifts: [
+        { key: "corgi", name: "Corgi", image: "corgi.png", max: 1, keywords: ["corgi"] },
+        { key: "batidas", name: "Batidas do coração", image: "batidas_do_coração.png", max: 1, keywords: ["batida", "batidas"] },
+        { key: "coracoes", name: "Corações", image: "corações.png", max: 1, keywords: ["corações", "coracoes", "hearts"] },
+        { key: "apoio_luvx", name: "Apoio LUVX", image: "apoio_luvx.png", max: 10, keywords: ["apoio luvx", "luvx"] },
+        { key: "maos_coracao_1", name: "Mãos em coração", image: "mãos_em_coração.png", max: 1, keywords: ["mãos em coração", "maos em coracao"] },
+        { key: "rosa", name: "Rosa", image: "rosa.png", max: 10, keywords: ["rosa", "rose"] },
+        { key: "chapeu", name: "Chapéu e Bigode", image: "chapéu_e_bigode.png", max: 1, keywords: ["chapéu e bigode", "chapeu e bigode"] },
+        { key: "maos_coracao_4", name: "Mãos fazendo cora...", image: "mãos_fazendo_coração.png", max: 4, keywords: ["mãos fazendo coração", "maos fazendo coracao"] },
+        { key: "rosquinha", name: "Rosquinha", image: "rosquinha.png", max: 2, keywords: ["rosquinha", "donut"] },
+        { key: "pistola", name: "Pistola de dinheiro", image: "pistola_de_dinheiro.png", max: 1, keywords: ["pistola de dinheiro", "pistola"] },
+        { key: "cisne", name: "Cisne", image: "cisne.png", max: 1, keywords: ["cisne", "swan"] }
+    ],
+
+    initialProgress: {
+        "apoio_luvx": 10,
+        "maos_coracao_1": 1,
+        "rosa": 10,
+        "chapeu": 1,
+        "maos_coracao_4": 1
+    },
+
+    showStatus: true
+};
+
+const audioAlert = document.getElementById("audio-alert");
+const alertPop = document.getElementById("alert-pop");
+const alertImg = document.getElementById("alert-img");
+const alertTitle = document.getElementById("alert-title");
+const status = document.getElementById("status");
+
+let playing = false;
+let queue = [];
+
+function initGalleryStorage() {
+    const storageKey = "gallery_progress_" + CONFIG.galleryVersion;
+    if (!localStorage.getItem(storageKey)) {
+        localStorage.setItem(storageKey, JSON.stringify(CONFIG.initialProgress));
+    }
+}
+
+function renderGalleryCarousel() {
+    const track = document.getElementById("gallery-track");
+    track.innerHTML = "";
+
+    const storageKey = "gallery_progress_" + CONFIG.galleryVersion;
+    const galleryProgress = JSON.parse(localStorage.getItem(storageKey)) || {};
+
+    const fullGallery = [...CONFIG.galleryGifts, ...CONFIG.galleryGifts];
+
+    fullGallery.forEach(item => {
+        const currentCount = galleryProgress[item.key] || 0;
+        const isUnlocked = currentCount >= item.max;
+
+        const card = document.createElement("div");
+        card.className = `gallery-card ${isUnlocked ? 'unlocked' : ''}`;
+
+        card.innerHTML = `
+            <img class="gallery-img" src="${item.image}" alt="${item.name}">
+            <div class="gallery-count">${currentCount}/${item.max}</div>
+            <div class="gallery-name">${item.name}</div>
+        `;
+        track.appendChild(card);
+    });
+}
+
+function setStatus(text) {
+    if (CONFIG.showStatus) {
+        status.textContent = text;
+        status.style.display = "block";
+    } else {
+        status.style.display = "none";
+    }
+}
+
+function triggerAlert(giftItem) {
+    queue.push(giftItem);
+    processQueue();
+}
+
+async function processQueue() {
+    if (playing || queue.length === 0) return;
+    playing = true;
+
+    const item = queue.shift();
+
+    try {
+        alertImg.src = item.image;
+        alertTitle.textContent = item.name.toUpperCase();
+        alertPop.style.display = "flex";
+        
+        audioAlert.currentTime = 0;
+        await audioAlert.play();
+
+        await new Promise(r => setTimeout(r, 3500));
+    } catch (e) {
+        console.error("Erro ao exibir alerta:", e);
+    }
+
+    alertPop.style.display = "none";
+    playing = false;
+    processQueue();
+}
+
+function handleStreamerbotAction(data) {
+    if (!data) return;
+
+    const actionName = data.name || data.actionName || "";
+    if (actionName !== CONFIG.actionName) return;
+
+    const args = data.arguments || {};
+    const giftNameInput = String(args.giftName || args.gift_name || args.giftId || "").toLowerCase().trim();
+    const repeatCount = Number(args.repeatCount || args.repeat_count || 1);
+
+    const targetGift = CONFIG.galleryGifts.find(g => 
+        g.keywords.some(kw => giftNameInput.includes(kw))
+    );
+
+    if (!targetGift) return;
+
+    const storageKey = "gallery_progress_" + CONFIG.galleryVersion;
+    const galleryProgress = JSON.parse(localStorage.getItem(storageKey)) || {};
+    const currentQty = galleryProgress[targetGift.key] || 0;
+
+    // TRAVA: Se já atingiu o máximo, ignora o alerta da galeria totalmente
+    if (currentQty >= targetGift.max) {
+        console.log(`[Galeria] O item ${targetGift.name} já está maxeado (${currentQty}/${targetGift.max}). Alerta ignorado.`);
+        return;
+    }
+
+    galleryProgress[targetGift.key] = Math.min(targetGift.max, currentQty + repeatCount);
+    localStorage.setItem(storageKey, JSON.stringify(galleryProgress));
+    
+    renderGalleryCarousel();
+    triggerAlert(targetGift);
+}
+
+function connectStreamerbot() {
+    try {
+        setStatus("🔄 Conectando ao Streamer.bot...");
+        window.streamerbotClient = new StreamerbotClient({
+            host: "127.0.0.1",
+            port: 8080,
+            endpoint: "/"
+        });
+
+        window.streamerbotClient.on("Raw.Action", ({ event, data }) => {
+            handleStreamerbotAction(data);
+        });
+
+        setStatus("🟢 Overlay Galeria Conectado!");
+        setTimeout(() => {
+            if (CONFIG.showStatus) status.style.display = "none";
+        }, 3000);
+
+    } catch (error) {
+        setStatus("🔴 Erro ao conectar ao Streamer.bot");
+        setTimeout(connectStreamerbot, 5000);
+    }
+}
+
+window.addEventListener("load", () => {
+    initGalleryStorage();
+    renderGalleryCarousel();
+    connectStreamerbot();
+});
+</script>
+</body>
+</html>
