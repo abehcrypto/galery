@@ -20,24 +20,23 @@
     }
 
     /* CARROSSEL NO RODAPÉ */
-   #gallery-carousel-container {
-    position: absolute;
-    top: 1335px;        /* Ajustado para alinhar perfeitamente no topo do espaço roxo */
-    left: 40px;         /* Move para a esquerda para ocupar toda a largura disponível */
-    width: 1000px;      /* Expande de ponta a ponta até a borda direita */
-    height: 250px;      /* Aumenta a altura para preencher o espaço até o nome ABÊ GAMES */
-    background: rgba(15, 12, 30, 0.92);
-    border: 2px solid #5d3ebd;
-    border-radius: 12px;
-    padding: 10px 12px;
-    box-shadow: 0 0 15px rgba(123, 44, 191, 0.6);
-    color: #fff;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-gap: 15px;
-}
+    #gallery-carousel-container {
+        position: absolute;
+        top: 1330px;
+        left: 350px;
+        width: 710px;
+        height: 165px;
+        background: rgba(15, 12, 30, 0.92);
+        border: 2px solid #5d3ebd;
+        border-radius: 12px;
+        padding: 10px 12px;
+        box-shadow: 0 0 15px rgba(123, 44, 191, 0.6);
+        color: #fff;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
 
     .title-gallery {
         text-align: center;
@@ -73,7 +72,7 @@ gap: 15px;
         border-radius: 8px;
         padding: 6px 4px;
         width: 115px;
-        height: 160px;
+        height: 115px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -90,11 +89,11 @@ gap: 15px;
         background: rgba(0, 245, 212, 0.15);
     }
 
-   .gallery-img {
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
-}
+    .gallery-img {
+        width: 46px;
+        height: 46px;
+        object-fit: contain;
+    }
 
     .gallery-count {
         font-size: 11px;
@@ -204,29 +203,18 @@ gap: 15px;
 <script>
 const CONFIG = {
     actionName: "PRESENTES",
-    galleryVersion: "v10_reset_pos_testes",
 
     galleryGifts: [
-        { key: "corgi", name: "Corgi", image: "corgi.png", max: 1, keywords: ["corgi"] },
-        { key: "batidas", name: "Batidas do coração", image: "batidas_do_coração.png", max: 1, keywords: ["batida", "batidas"] },
-        { key: "coracoes", name: "Corações", image: "corações.png", max: 1, keywords: ["corações", "coracoes", "hearts"] },
-        { key: "apoio_luvx", name: "Apoio LUVX", image: "apoio_luvx.png", max: 10, keywords: ["apoio luvx", "luvx"] },
-        { key: "maos_coracao_1", name: "Mãos em coração", image: "mãos_em_coração.png", max: 1, keywords: ["mãos em coração", "maos em coracao"] },
         { key: "rosa", name: "Rosa", image: "rosa.png", max: 10, keywords: ["rosa", "rose"] },
-        { key: "chapeu", name: "Chapéu e Bigode", image: "chapéu_e_bigode.png", max: 1, keywords: ["chapéu e bigode", "chapeu e bigode"] },
         { key: "maos_coracao_4", name: "Mãos fazendo cora...", image: "mãos_fazendo_coração.png", max: 4, keywords: ["mãos fazendo coração", "maos fazendo coracao"] },
         { key: "rosquinha", name: "Rosquinha", image: "rosquinha.png", max: 2, keywords: ["rosquinha", "donut"] },
+        { key: "chapeu", name: "Chapéu e Bigode", image: "chapéu_e_bigode.png", max: 1, keywords: ["chapéu e bigode", "chapeu e bigode"] },
+        { key: "maos_coracao_1", name: "Mãos em coração", image: "mãos_em_coração.png", max: 1, keywords: ["mãos em coração", "maos em coracao"] },
+        { key: "coracoes", name: "Corações", image: "corações.png", max: 1, keywords: ["corações", "coracoes", "hearts"] },
+        { key: "corgi", name: "Corgi", image: "corgi.png", max: 1, keywords: ["corgi"] },
         { key: "pistola", name: "Pistola de dinheiro", image: "pistola_de_dinheiro.png", max: 1, keywords: ["pistola de dinheiro", "pistola"] },
         { key: "cisne", name: "Cisne", image: "cisne.png", max: 1, keywords: ["cisne", "swan"] }
     ],
-
-    initialProgress: {
-        "apoio_luvx": 10,
-        "maos_coracao_1": 1,
-        "rosa": 10,
-        "chapeu": 1,
-        "maos_coracao_4": 1
-    },
 
     showStatus: true
 };
@@ -240,10 +228,28 @@ const status = document.getElementById("status");
 let playing = false;
 let queue = [];
 
+// Função que descobre a data da última segunda-feira
+function getLastMonday() {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // ajusta quando é domingo
+    const monday = new Date(d.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    return monday.getTime();
+}
+
 function initGalleryStorage() {
-    const storageKey = "gallery_progress_" + CONFIG.galleryVersion;
-    if (!localStorage.getItem(storageKey)) {
-        localStorage.setItem(storageKey, JSON.stringify(CONFIG.initialProgress));
+    const storageKey = "gallery_progress_data";
+    const lastResetKey = "gallery_last_reset_monday";
+    
+    const currentMonday = getLastMonday();
+    const savedMonday = localStorage.getItem(lastResetKey);
+
+    // Se mudou a semana (ou é o primeiro acesso), reseta o progresso para 0
+    if (!savedMonday || parseInt(savedMonday) < currentMonday) {
+        localStorage.setItem(storageKey, JSON.stringify({}));
+        localStorage.setItem(lastResetKey, currentMonday.toString());
+        console.log("[Galeria] Segunda-feira detectada! Progresso resetado.");
     }
 }
 
@@ -251,8 +257,7 @@ function renderGalleryCarousel() {
     const track = document.getElementById("gallery-track");
     track.innerHTML = "";
 
-    const storageKey = "gallery_progress_" + CONFIG.galleryVersion;
-    const galleryProgress = JSON.parse(localStorage.getItem(storageKey)) || {};
+    const galleryProgress = JSON.parse(localStorage.getItem("gallery_progress_data")) || {};
 
     const fullGallery = [...CONFIG.galleryGifts, ...CONFIG.galleryGifts];
 
@@ -326,11 +331,10 @@ function handleStreamerbotAction(data) {
 
     if (!targetGift) return;
 
-    const storageKey = "gallery_progress_" + CONFIG.galleryVersion;
+    const storageKey = "gallery_progress_data";
     const galleryProgress = JSON.parse(localStorage.getItem(storageKey)) || {};
     const currentQty = galleryProgress[targetGift.key] || 0;
 
-    // TRAVA: Se já atingiu o máximo, ignora o alerta da galeria totalmente
     if (currentQty >= targetGift.max) {
         console.log(`[Galeria] O item ${targetGift.name} já está maxeado (${currentQty}/${targetGift.max}). Alerta ignorado.`);
         return;
